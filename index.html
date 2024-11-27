@@ -33,7 +33,25 @@
     <div class="container">
         <h1>Job Analysis</h1>
         <input type = "file" id = "fileInput"/>
-        <p id = "fileStatus"></p>
+        <p id = "fileStatus" style="display: block;"></p>
+        <div style = "display: none; gap: 10px; align-items: center;" id = "filterMenu">
+            <p>Filter by Level:</p>
+            <select name="Filter" id="Level">
+                <option value="all">All</option>
+              </select>
+
+            <p>Filter by Type</p>
+            <select name="Filter" id="Type">
+                <option value="all">All</option>
+              </select>
+
+            <p>Filter by Skill</p>
+            <select name="Filter" id="Skill">
+                <option value="all">All</option>
+              </select>
+
+            <button type = "filter">Filter Jobs</button>
+        </div>
     </div>
     <script src = "JobAnalysis.js"></script>
 </body>
