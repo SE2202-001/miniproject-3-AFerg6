@@ -4,61 +4,112 @@ const fileStatusText = document.getElementById("fileStatus");
 const filterMenu = document.getElementById("filterMenu");
 const container = document.getElementById('jobListContainer'); 
 const sortBox = document.getElementById('Sort');
+const filterButton = document.getElementById('FilterButton');
+const levelFilter = document.getElementById('Level');
+const typeFilter = document.getElementById('Type');
+const skillFilter = document.getElementById('Skill');
 
-let  jobsList = [];
+let jobsList = [];
+let fullJobList;
 let prevSort;
 
 //event listener to change the ui when a json file is loaded
 fileInput.addEventListener('change', function(event){
-    var userFile = event.target.files[0];
-    var fileParts= userFile.name.split(".");
-    var fileExtension = fileParts[1];
-    
-    
-    //varifies json file and prompts user to input correct filetype otherwise
-    if(fileExtension != "json"){
-        fileStatusText.textContent = "Incorrect file type please select a json file";
+  var userFile = event.target.files[0];
+  var fileParts= userFile.name.split(".");
+  var fileExtension = fileParts[1];
+  
+  
+  //varifies json file and prompts user to input correct filetype otherwise
+  if(fileExtension != "json"){
+    fileStatusText.textContent = "Incorrect file type please select a json file";
+    fileStatusText.style.display = "block";
+    filterMenu.style.display = "none";
+  }else{
+    fileStatusText.textContent = "";
+    fileStatusText.style.display = "none";
+    filterMenu.style.display = "block";
+
+    const reader = new FileReader();
+
+    reader.onload = function(event) {
+      try {
+          jobsList = JSON.parse(event.target.result); // Parse JSON directly
+          jobsList = filterDupes(jobsList); //filters out dupes
+          fullJobList = JSON.parse(JSON.stringify(jobsList)); //creates a deep copy to reset list after being filtered
+          sortList(jobsList);
+          
+          levelFilter.innerHTML = `<option value="all">All</option>`;
+          typeFilter.innerHTML = `<option value="all">All</option>`;
+          skillFilter.innerHTML = `<option value="all">All</option>`;
+
+          let filterLists = getFilters(jobsList);
+          let levelList = [...filterLists[0]];
+          let typeList = [...filterLists[1]];
+          let skillList = [...filterLists[2]];
+          
+          levelList.forEach(str => {
+            let option = document.createElement("option");
+            option.value = str;
+            option.textContent = str;
+            levelFilter.appendChild(option);
+          });
+
+          typeList.forEach(str => {
+            let option = document.createElement("option");
+            option.value = str;
+            option.textContent = str;
+            typeFilter.appendChild(option);
+          });
+
+          skillList.forEach(str => {
+            let option = document.createElement("option");
+            option.value = str;
+            option.textContent = str;
+            skillFilter.appendChild(option);
+          });
+
+      } catch (error) {
+        console.error('Error parsing JSON:', error);
+        fileStatusText.textContent = "There was an error loading this file please try another file";
         fileStatusText.style.display = "block";
         filterMenu.style.display = "none";
-    }else{
-        fileStatusText.textContent = "";
-        fileStatusText.style.display = "none";
-        filterMenu.style.display = "block";
 
+      }
+    };
 
+    reader.onerror = function() {
+      console.error('Error reading file:', reader.error);
+    };
+  
+    reader.readAsText(userFile); // Read the file as text
 
-        const reader = new FileReader();
+  
 
-        reader.onload = function(event) {
-            try {
-                jobsList = JSON.parse(event.target.result); // Parse JSON directly
-                jobsList = filterDupes(jobsList);
-                sortList(jobsList);
-                // displayJobs(jobsList);
-                
-        
-              
-            } catch (error) {
-              console.error('Error parsing JSON:', error);
-              fileStatusText.textContent = "There was an error loading this file please try another file";
-                fileStatusText.style.display = "block";
-                filterMenu.style.display = "none";
-
-            }
-          };
-
-          reader.onerror = function() {
-            console.error('Error reading file:', reader.error);
-          };
-        
-          reader.readAsText(userFile); // Read the file as text
-        
-
-    }
-    
+  }  
 });
 
 sortBox.addEventListener('change', () => sortList(jobsList));
+
+filterButton.addEventListener('click', function(){
+  jobsList = JSON.parse(JSON.stringify(fullJobList)); //resests list to full unfiltered list 
+  
+  const filters = {
+    type: typeFilter.value,  
+    level: levelFilter.value,             
+    skill: skillFilter.value               
+  };
+  
+  const filteredJobs = jobsList.filter(job => 
+    (filters.type !== 'all' ? job.Type === filters.type : true) &&
+    (filters.level !== 'all' ? job.Level === filters.level : true) &&
+    (filters.skill !== 'all' ? job.Skill === filters.skill : true)
+  );
+
+  jobsList = JSON.parse(JSON.stringify(filteredJobs));
+  displayJobs(jobsList);
+  
+});
 
 function displayJobs(inpList) {
   container.innerHTML = ''; // Clear previous content
@@ -81,6 +132,9 @@ function displayJobs(inpList) {
   });
 
   container.appendChild(ul);
+
+  
+
 }
 
 function filterDupes(inpList) {
@@ -186,10 +240,12 @@ function sortList(inpList) {
     }
   }
 
+
+  
+
   displayJobs(inpList);
   prevSort = currentSort;
 }
-
 
 function listSorter(inpList, method) {
   if (method === "alpha") {
@@ -219,10 +275,23 @@ function dateToStandard(date) {
   }
 }
 
-
 function compareTo(a, b) {
   if (a < b) return -1;
   if (a > b) return 1;
   return 0;
 }
 
+function getFilters(inpList) {
+  let levelSet = new Set();
+  let typeSet = new Set();
+  let skillSet = new Set();
+
+  for (let i = 0; i < inpList.length; i++) {
+    let job = inpList[i];
+    levelSet.add(job["Level"]);
+    typeSet.add(job["Type"]);
+    skillSet.add(job["Skill"]);
+  }
+
+  return  [levelSet, typeSet, skillSet];
+}
