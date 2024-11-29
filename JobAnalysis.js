@@ -8,7 +8,11 @@ const filterButton = document.getElementById('FilterButton');
 const levelFilter = document.getElementById('Level');
 const typeFilter = document.getElementById('Type');
 const skillFilter = document.getElementById('Skill');
+const popup = document.getElementById('popup');
+const popupMessage = document.getElementById('popupMessage');
+const closeButton = document.getElementById('closeButton');
 
+//define global variables
 let jobsList = [];
 let fullJobList;
 let prevSort;
@@ -26,28 +30,35 @@ fileInput.addEventListener('change', function(event){
     fileStatusText.style.display = "block";
     filterMenu.style.display = "none";
   }else{
+    //displays menu for filters and hides error message line
     fileStatusText.textContent = "";
     fileStatusText.style.display = "none";
     filterMenu.style.display = "block";
 
+    //reader to read input file
     const reader = new FileReader();
 
     reader.onload = function(event) {
+      //tries to load input file and throws error on issue
       try {
+
           jobsList = JSON.parse(event.target.result); // Parse JSON directly
           jobsList = filterDupes(jobsList); //filters out dupes
           fullJobList = JSON.parse(JSON.stringify(jobsList)); //creates a deep copy to reset list after being filtered
           sortList(jobsList);
           
+          //resets filters to defaults 
           levelFilter.innerHTML = `<option value="all">All</option>`;
           typeFilter.innerHTML = `<option value="all">All</option>`;
           skillFilter.innerHTML = `<option value="all">All</option>`;
 
+          //gets list of filters for each category
           let filterLists = getFilters(jobsList);
           let levelList = [...filterLists[0]];
           let typeList = [...filterLists[1]];
           let skillList = [...filterLists[2]];
           
+          //adds filters to respective dropdown
           levelList.forEach(str => {
             let option = document.createElement("option");
             option.value = str;
@@ -70,11 +81,11 @@ fileInput.addEventListener('change', function(event){
           });
 
       } catch (error) {
+        //error handeling 
         console.error('Error parsing JSON:', error);
         fileStatusText.textContent = "There was an error loading this file please try another file";
         fileStatusText.style.display = "block";
         filterMenu.style.display = "none";
-
       }
     };
 
@@ -83,40 +94,51 @@ fileInput.addEventListener('change', function(event){
     };
   
     reader.readAsText(userFile); // Read the file as text
-
-  
-
   }  
 });
 
+//sorts list to follow current option on dropdown
 sortBox.addEventListener('change', () => sortList(jobsList));
 
+//filters list on clicked
 filterButton.addEventListener('click', function(){
   jobsList = JSON.parse(JSON.stringify(fullJobList)); //resests list to full unfiltered list 
   
+  //sets filters equal to value in filter dropdowns
   const filters = {
     type: typeFilter.value,  
     level: levelFilter.value,             
     skill: skillFilter.value               
   };
   
+  //filters list based on filters obj
+  //filter with value all is ignored in filter
   const filteredJobs = jobsList.filter(job => 
     (filters.type !== 'all' ? job.Type === filters.type : true) &&
     (filters.level !== 'all' ? job.Level === filters.level : true) &&
     (filters.skill !== 'all' ? job.Skill === filters.skill : true)
   );
 
+  //deep clones filtered list and makes clone joblist to prevent accidental linking of lists
+  //displays new list
   jobsList = JSON.parse(JSON.stringify(filteredJobs));
   displayJobs(jobsList);
   
 });
 
+//event to close popup
+closeButton.addEventListener('click', function() {
+  popup.style.display = 'none'; // Hide the popup by setting display to none
+});
+//adds each job as an element to the list html element
 function displayJobs(inpList) {
   container.innerHTML = ''; // Clear previous content
 
+  //creates element to hold jobs
   const ul = document.createElement('ul');
   ul.classList.add('job-list');
 
+  //adds each job to ul element
   inpList.forEach(job => {
     const li = document.createElement('li');
     li.classList.add('job-item');
@@ -128,15 +150,19 @@ function displayJobs(inpList) {
       </div>
     `;
 
+    li.addEventListener('click', function() {
+      showPopup(job);  
+    });
+
     ul.appendChild(li);
   });
 
   container.appendChild(ul);
 
-  
 
 }
 
+//filters out duplicate jobs so only one is posted
 function filterDupes(inpList) {
   // Verify that input is an array
   if (!Array.isArray(inpList)) {
@@ -176,9 +202,10 @@ function filterDupes(inpList) {
   return filteredList;
 }
 
+//sorts inputted list
 function sortList(inpList) {
   let currentSort = sortBox.value;
-  if (currentSort === prevSort) return;
+  if (currentSort === prevSort) return; // skips sorting if same sort is chosen
 
   if (currentSort === "Newest") {
     //to sort with alpha subsort must first sort by alpha then sort by posted time
@@ -207,10 +234,12 @@ function sortList(inpList) {
     //first sorted to inverse alpha, then sorted to date(newest) and flipped making oldest and aplha sub sorted
     switch(prevSort){
       
+      //flips to be in reverse alpha
       case "AZ":
         inpList.reverse();
         break;
 
+      //already in reverse alpha
       case "ZA":
         break;
 
@@ -240,21 +269,12 @@ function sortList(inpList) {
     }
   }
 
-
-  
-
+  //displays sorted list and updates previous sort
   displayJobs(inpList);
   prevSort = currentSort;
 }
 
-function listSorter(inpList, method) {
-  if (method === "alpha") {
-    inpList.sort((a, b) => compareTo(a["Title"].toLowerCase(), b["Title"].toLowerCase()));
-  } else if (method === "date") {
-    inpList.sort((a, b) => compareTo(dateToStandard(a["Posted"]), dateToStandard(b["Posted"])));
-  }
-}
-
+//converts given date to a standard unit of minutes for sorting
 function dateToStandard(date) {
   let dateParts = date.split(" ");
   let value = parseInt(dateParts[0], 10); 
@@ -263,29 +283,33 @@ function dateToStandard(date) {
   switch (unit) {
     case "minute":
     case "minutes":
-      return value; 
+      return value;  //dont need to convert to minutes
     case "hour":
     case "hours":
-      return value * 60;
+      return value * 60;  //converts hours to min
     case "day":
     case "days":
-      return value * 24 * 60;
+      return value * 24 * 60; //converts days to hours to min
     default:
       return 0; // Handle unexpected units
   }
 }
 
+//basic compareto function
 function compareTo(a, b) {
   if (a < b) return -1;
   if (a > b) return 1;
   return 0;
 }
 
+//looks through inputed list to get avalible filters
 function getFilters(inpList) {
+  //made sets to auto filter out dupes
   let levelSet = new Set();
   let typeSet = new Set();
   let skillSet = new Set();
 
+  //adds filtered properties to filter sets
   for (let i = 0; i < inpList.length; i++) {
     let job = inpList[i];
     levelSet.add(job["Level"]);
@@ -294,4 +318,20 @@ function getFilters(inpList) {
   }
 
   return  [levelSet, typeSet, skillSet];
+}
+
+function showPopup(job) {
+  //setup text for popup
+  popupMessage.textContent = `
+      Title: ${job.Title}
+      Type: ${job.Type}
+      Level: ${job.Level}
+      Estimated Time: ${job["Estimated Time"]}
+      Skill: ${job.Skill}
+      Detail: ${job.Detail}\n
+      Job Link: ${job["Job Page Link"]}\n
+      Posted: ${job.Posted}\n
+  `;
+  popup.style.display = 'flex';  // Show the popup
+
 }

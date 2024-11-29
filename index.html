@@ -9,9 +9,15 @@
 <body>
     <div class="container">
         <h1>Job Analysis</h1>
+        <!-- file input box -->
         <input type = "file" id = "fileInput"/>
+
+        <!-- text used for error messages. hidden by defualt -->
         <p id = "fileStatus" style="display: block;"></p>
+
+        <!-- menu that holds filter and sort blocks -->
         <div id = "filterMenu" style="display: none;">
+            <!-- filter options -->
             <div style = "display: flex; gap: 10px; align-items: center;" >
                 <p>Filter by Level:</p>
                 <select name="Filter" id="Level">
@@ -31,6 +37,7 @@
                 <button type="button" id="FilterButton">Filter Jobs</button>
             </div>
 
+            <!-- sort block -->
             <div style = "display: flex; gap: 10px; align-items: center;" >
                 <p>Sort by:</p>
                 <select name="Sort" id="Sort">
@@ -41,7 +48,17 @@
                 </select>
             </div>
 
+            <!-- container for list of jobs -->
             <div id = "jobListContainer"></div>
+
+            <!-- popup for job details. hidden by default -->
+            <div id="popup" class="popup">
+                <div class="popup-content">
+                    <p id="popupMessage"></p>
+                    <button id="closeButton">OK</button>
+                </div>
+            </div>
+
         </div>
     </div>
 </body>
